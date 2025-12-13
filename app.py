@@ -12,7 +12,6 @@ st.set_page_config(page_title="NY Energy Policy AI", layout="wide")
 
 # --- SIDEBAR & KEYS ---
 with st.sidebar:
-    st.image("https://img.icons8.com/color/96/000000/usa.png", width=50)
     st.title("Settings")
     
     # Check for secrets first, then fall back to manual entry
