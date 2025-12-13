@@ -90,8 +90,8 @@ with st.sidebar:
 # --- MAIN APP LOGIC ---
 
 # Custom Title with the Orange Accent Line underneath implied by CSS
-st.title("National Energy Policy Intelligence")
-st.markdown("Welcome to the **Hamm Institute** policy analysis tool. Search across indexed state energy plans.")
+st.title("NY Energy Policy Intelligence")
+st.markdown("Welcome to the policy analysis tool. Search across indexed state energy plans.")
 
 # Stop if keys are missing
 if not pinecone_key or not groq_key:
