@@ -9,95 +9,71 @@ from langchain_core.output_parsers import StrOutputParser
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
-    page_title="Hamm Institute AI",
-    page_icon="⚡",
+    page_title="Hamm Institute Policy Intelligence",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- CUSTOM CSS FOR HAMM INSTITUTE BRANDING ---
+# --- BRANDING & CSS ---
+# This block injects custom CSS to match the Hamm Institute website
 st.markdown("""
     <style>
-    /* MAIN BACKGROUND & FONT */
-    .stApp {
-        background-color: #FFFFFF;
-        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    }
-    
-    /* SIDEBAR STYLING */
-    [data-testid="stSidebar"] {
-        background-color: #F8F9FA;
-        border-right: 1px solid #E0E0E0;
-    }
-    
-    /* HEADERS (Black/Dark Grey) */
-    h1, h2, h3 {
-        color: #000000 !important;
-        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-        font-weight: 700;
-    }
-    
-    /* ACCENT COLORS (Hamm Orange) */
-    a {
-        color: #FF782D !important;
-        text-decoration: none;
-    }
-    .stButton button {
-        background-color: #FF782D !important;
-        color: white !important;
-        border: none !important;
-        font-weight: bold !important;
-    }
-    .stButton button:hover {
-        background-color: #E06010 !important; /* Darker Orange on Hover */
-    }
-    
-    /* INPUT FIELDS */
-    .stTextInput input {
-        border-radius: 4px;
-        border: 1px solid #CCCCCC;
-    }
-    
-    /* CHAT MESSAGES */
-    [data-testid="stChatMessage"] {
-        padding: 1rem;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-    }
-    [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] p {
-        font-size: 16px;
-        line-height: 1.6;
-    }
-    
-    /* LOGO & HEADER ALIGNMENT */
-    .header-container {
-        display: flex;
-        align-items: center;
-        padding-bottom: 2rem;
-        border-bottom: 2px solid #FF782D;
-        margin-bottom: 2rem;
-    }
-    .logo-img {
-        height: 80px;
-        margin-right: 20px;
-    }
+        /* 1. Main Background and Font */
+        .stApp {
+            background-color: #FFFFFF;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+        
+        /* 2. Header Color Line (The "Matching Color Lines") */
+        .main > div:first-child {
+            padding-top: 0px;
+        }
+        div[data-testid="stHeader"] {
+            border-bottom: 5px solid #FF7300; /* OSU Orange Accent */
+        }
+
+        /* 3. Titles and Headers */
+        h1, h2, h3 {
+            color: #1E2B3C; /* Dark Navy Blue */
+            font-weight: 700;
+            padding-bottom: 10px;
+        }
+        
+        /* 4. Sidebar Styling */
+        section[data-testid="stSidebar"] {
+            background-color: #F4F4F4;
+            border-right: 1px solid #DDDDDD;
+        }
+        
+        /* 5. Custom Button Styling */
+        div.stButton > button {
+            background-color: #FF7300;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        div.stButton > button:hover {
+            background-color: #E06000;
+            color: white;
+        }
+        
+        /* 6. Remove default Streamlit colored bar at very top */
+        header[data-testid="stHeader"] {
+            background-color: white;
+        }
     </style>
 """, unsafe_allow_html=True)
 
-# --- LOGO & HEADER ---
-col1, col2 = st.columns([1, 4])
-with col1:
-    # Display Logo from the link provided
-    st.image("https://github.com/srikarananand/state-energy-rag/blob/main/logo.png?raw=true", width=150)
-with col2:
-    st.title("Energy Policy Intelligence")
-    st.markdown("### Hamm Institute for American Energy")
-
-# --- SIDEBAR SETTINGS ---
+# --- SIDEBAR & SETTINGS ---
 with st.sidebar:
-    st.header("Configuration")
+    # LOGO: Using the RAW GitHub link so it renders correctly
+    st.image("https://raw.githubusercontent.com/srikarananand/state-energy-rag/main/logo.png", use_container_width=True)
     
-    # API Keys handling
+    st.markdown("### Settings")
+    st.markdown("---")
+    
+    # API Keys Handling
     if "PINECONE_API_KEY" in st.secrets:
         pinecone_key = st.secrets["PINECONE_API_KEY"]
     else:
@@ -107,22 +83,25 @@ with st.sidebar:
         groq_key = st.secrets["GROQ_API_KEY"]
     else:
         groq_key = st.text_input("Groq API Key", type="password")
-        
+    
     st.markdown("---")
-    st.markdown("**System Status:** 🟢 Online")
-    st.caption("v1.0.0 | Production Build")
+    st.markdown("**Status:** System Online")
 
 # --- MAIN APP LOGIC ---
 
+# Custom Title with the Orange Accent Line underneath implied by CSS
+st.title("National Energy Policy Intelligence")
+st.markdown("Welcome to the **Hamm Institute** policy analysis tool. Search across indexed state energy plans.")
+
 # Stop if keys are missing
 if not pinecone_key or not groq_key:
-    st.warning("⚠️ Access Restricted: Please enter API credentials.")
+    st.warning("Please enter your API keys in the sidebar to continue.")
     st.stop()
 
 @st.cache_resource
 def load_chain(pinecone_api_key, groq_api_key):
     """
-    Initializes the RAG chain using modern LCEL.
+    Initializes the RAG chain using LCEL.
     """
     # 1. Embeddings
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
@@ -135,20 +114,19 @@ def load_chain(pinecone_api_key, groq_api_key):
     )
     retriever = vector_store.as_retriever(search_kwargs={"k": 5})
     
-    # 3. LLM (Llama-3.3-70b)
+    # 3. LLM (Using the versatile model)
     llm = ChatGroq(
         model_name="llama-3.3-70b-versatile",
         temperature=0.1,
         groq_api_key=groq_api_key
     )
     
-    # 4. Professional Policy Analyst Prompt
+    # 4. Prompt Template (Clean, professional tone)
     template = """
-    You are a senior energy policy analyst at the Hamm Institute. 
-    Your tone is professional, objective, and precise.
+    You are a senior policy analyst for the Hamm Institute. 
     Answer the question based ONLY on the following context.
     Cite the document name for every fact you state. 
-    If the context contains tables, analyze the data rows carefully.
+    If the context contains tables, interpret the rows and columns accurately.
 
     Context:
     {context}
@@ -184,39 +162,39 @@ except Exception as e:
 
 # --- CHAT INTERFACE ---
 if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "assistant", "content": "Welcome. I am ready to analyze the State Energy Plans. Please enter your query."}]
+    st.session_state.messages = [{"role": "assistant", "content": "Hello. Accessing the National Energy Policy database. How can I assist you today?"}]
 
 # Display History
 for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg["content"])
 
 # Handle Input
-if query := st.chat_input("Enter your policy question here..."):
+if query := st.chat_input("Enter your policy question..."):
     st.session_state.messages.append({"role": "user", "content": query})
     st.chat_message("user").write(query)
     
     with st.chat_message("assistant"):
-        with st.spinner("Processing inquiry..."):
+        with st.spinner("Processing request..."):
             try:
+                # Invoke the chain
                 response = chain.invoke(query)
+                
                 answer = response["answer"]
                 sources = response["context"]
                 
                 st.write(answer)
                 
-                # Professional Source Display
-                with st.expander("REFERENCE DOCUMENTS"):
+                # Show Sources (Clean Format)
+                with st.expander("Reference Documents"):
                     for i, doc in enumerate(sources):
-                        source_name = doc.metadata.get('source', 'Unknown Document')
-                        
-                        # Clean up filename for display
-                        display_name = source_name.split("/")[-1] if "/" in source_name else source_name
-                        
-                        st.markdown(f"**{i+1}. {display_name}**")
+                        source_name = doc.metadata.get('source', 'Unknown PDF')
+                        # Clean link formatting
                         if source_name.startswith("http"):
-                            st.markdown(f"[Open Document]({source_name})")
-                        st.caption(doc.page_content[:250] + "...")
-                        st.markdown("---")
+                            st.markdown(f"**{i+1}.** [{source_name}]({source_name})")
+                        else:
+                            st.markdown(f"**{i+1}.** {source_name}")
+                            
+                        st.caption(doc.page_content[:200] + "...")
                 
                 st.session_state.messages.append({"role": "assistant", "content": answer})
                 
