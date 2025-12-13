@@ -1,7 +1,5 @@
 import streamlit as st
 import os
-
-# --- YOUR CONFIRMED IMPORTS ---
 from langchain_groq import ChatGroq
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_pinecone import PineconeVectorStore
@@ -14,9 +12,10 @@ st.set_page_config(page_title="NY Energy Policy AI", layout="wide")
 
 # --- SIDEBAR & KEYS ---
 with st.sidebar:
+    st.image("https://img.icons8.com/color/96/000000/usa.png", width=50)
     st.title("Settings")
     
-    # Check for secrets first, otherwise ask user
+    # Check for secrets first, then fall back to manual entry
     if "PINECONE_API_KEY" in st.secrets:
         pinecone_key = st.secrets["PINECONE_API_KEY"]
     else:
@@ -29,21 +28,20 @@ with st.sidebar:
     
     st.markdown("---")
     st.markdown("**Status:** 🟢 System Online")
-    st.markdown(f"**Index:** energy-policy")
 
 # --- MAIN APP LOGIC ---
 st.title("⚡ New York Energy Policy Intelligence")
-st.markdown("Ask questions about the **230+ indexed documents** from the NY State Energy Plan.")
+st.markdown("Ask questions about the **indexed NY State Energy Plan documents**.")
 
+# Stop if keys are missing
 if not pinecone_key or not groq_key:
     st.warning("⚠️ Please enter your API keys in the sidebar to continue.")
     st.stop()
 
 @st.cache_resource
-def get_rag_components(pinecone_api_key, groq_api_key):
+def load_chain(pinecone_api_key, groq_api_key):
     """
-    Initializes the RAG components. 
-    Returns the retriever and the chain separately so we can handle sources easily.
+    Initializes the RAG chain using modern LCEL (LangChain Expression Language).
     """
     # 1. Embeddings
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
@@ -56,78 +54,90 @@ def get_rag_components(pinecone_api_key, groq_api_key):
     )
     retriever = vector_store.as_retriever(search_kwargs={"k": 5})
     
-    # 3. LLM (Groq)
+    # 3. LLM (Using the model you verified works)
     llm = ChatGroq(
-        model_name="llama3-70b-8192",
-        temperature=0,
+        model_name="llama-3.3-70b-versatile",
+        temperature=0.1,
         groq_api_key=groq_api_key
     )
     
-    # 4. Prompt Template (Modern Chat Format)
-    template = """You are an expert energy policy analyst.
-    Answer the user's question based ONLY on the context below.
-    If the context contains tables, carefully read the rows and columns.
-    ALWAYS cite the filename/source for your facts.
+    # 4. Prompt Template
+    template = """
+    You are a policy analyst. Answer the question based ONLY on the following context.
+    Cite the document name for every fact you state. If the context contains tables, read them carefully.
 
     Context:
     {context}
 
-    Question: 
-    {question}
+    Question: {question}
+
+    Answer:
     """
     prompt = ChatPromptTemplate.from_template(template)
+    
+    # 5. Build Chain (LCEL Style)
+    def format_docs(docs):
+        return "\n\n".join(doc.page_content for doc in docs)
 
-    # 5. Build the Generation Chain (LCEL)
-    # We do NOT include the retriever here. We will retrieve manually 
-    # so we can display the sources in the UI easily.
-    chain = (
-        prompt 
-        | llm 
+    # The chain that generates the answer
+    rag_chain_from_docs = (
+        RunnablePassthrough.assign(context=(lambda x: format_docs(x["context"])))
+        | prompt
+        | llm
         | StrOutputParser()
     )
+
+    # The chain that retrieves docs AND generates answer
+    rag_chain_with_source = RunnableParallel(
+        {"context": retriever, "question": RunnablePassthrough()}
+    ).assign(answer=rag_chain_from_docs)
     
-    return retriever, chain
+    return rag_chain_with_source
 
 try:
-    retriever, chain = get_rag_components(pinecone_key, groq_key)
+    chain = load_chain(pinecone_key, groq_key)
 except Exception as e:
     st.error(f"Connection Error: {e}")
     st.stop()
 
 # --- CHAT INTERFACE ---
 if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "assistant", "content": "Hello! I have read the NY Energy Plans. Ask me about targets, capacity, or regulations."}]
+    st.session_state.messages = [{"role": "assistant", "content": "Hello! I have access to the NY Energy plans. Ask me about targets or regulations."}]
 
+# Display History
 for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg["content"])
 
-if user_query := st.chat_input("Ex: What is the 2030 target for solar capacity?"):
-    # 1. User Message
-    st.session_state.messages.append({"role": "user", "content": user_query})
-    st.chat_message("user").write(user_query)
+# Handle Input
+if query := st.chat_input("Ex: What are the renewable targets for 2030?"):
+    st.session_state.messages.append({"role": "user", "content": query})
+    st.chat_message("user").write(query)
     
     with st.chat_message("assistant"):
-        with st.spinner("Analyzing 18,000+ policy records..."):
+        with st.spinner("Analyzing documents..."):
             try:
-                # 2. Explicit Retrieval Step (So we can show sources)
-                docs = retriever.invoke(user_query)
+                # Invoke the chain
+                response = chain.invoke(query)
                 
-                # Format context string
-                context_text = "\n\n".join([d.page_content for d in docs])
-                
-                # 3. Generate Answer
-                answer = chain.invoke({"context": context_text, "question": user_query})
+                answer = response["answer"]
+                sources = response["context"]
                 
                 st.write(answer)
                 
-                # 4. Show Sources
+                # Show Sources
                 with st.expander("📚 View Source Documents"):
-                    for i, doc in enumerate(docs):
+                    for i, doc in enumerate(sources):
+                        # Safely get metadata
                         source_name = doc.metadata.get('source', 'Unknown PDF')
-                        # Make the source clickable if it's a URL
-                        st.markdown(f"**Source {i+1}:** [{source_name}]({source_name})")
-                        st.caption(doc.page_content[:200].replace("\n", " ") + "...")
+                        # Create a clickable link if it looks like a URL
+                        if source_name.startswith("http"):
+                            st.markdown(f"**Source {i+1}:** [{source_name}]({source_name})")
+                        else:
+                            st.markdown(f"**Source {i+1}:** {source_name}")
+                            
+                        st.caption(doc.page_content[:200] + "...")
                 
                 st.session_state.messages.append({"role": "assistant", "content": answer})
+                
             except Exception as e:
                 st.error(f"Error generating response: {e}")
