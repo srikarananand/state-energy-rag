@@ -89,8 +89,7 @@ with st.sidebar:
     else:
         groq_key = st.text_input("Groq API Key", type="password")
     
-    st.markdown("---")
-    /*st.markdown("**Status:** System Online")*/
+
 
 # --- MAIN APP LOGIC ---
 
