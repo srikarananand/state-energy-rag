@@ -9,13 +9,12 @@ from langchain_core.output_parsers import StrOutputParser
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
-    page_title="Hamm Institute Policy Intelligence",
+    page_title="Policy Intelligence Tool",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # --- BRANDING & CSS ---
-# This block injects custom CSS to match the Hamm Institute website
 st.markdown("""
     <style>
         /* 1. Main Background and Font */
@@ -24,43 +23,49 @@ st.markdown("""
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
         }
         
-        /* 2. Header Color Line (The "Matching Color Lines") */
-        .main > div:first-child {
-            padding-top: 0px;
-        }
-        div[data-testid="stHeader"] {
-            border-bottom: 5px solid #FF7300; /* OSU Orange Accent */
+        /* 2. TOP DECORATION BAR (The very top line) - Set to Navy Blue */
+        div[data-testid="stDecoration"] {
+            background-image: none;
+            background-color: #1E2B3C !important; 
+            height: 5px;
         }
 
-        /* 3. Titles and Headers */
+        /* 3. HEADER BORDER (The Orange Accent Line) */
+        header[data-testid="stHeader"] {
+            background-color: rgba(255, 255, 255, 0.95) !important; /* Ensure header is not transparent */
+            border-bottom: 5px solid #FF7300 !important; /* OSU Orange */
+        }
+
+        /* 4. Titles and Headers */
         h1, h2, h3 {
-            color: #1E2B3C; /* Dark Navy Blue */
+            color: #1E2B3C !important; /* Dark Navy Blue */
             font-weight: 700;
             padding-bottom: 10px;
         }
         
-        /* 4. Sidebar Styling */
+        /* 5. Sidebar Styling */
         section[data-testid="stSidebar"] {
             background-color: #F4F4F4;
             border-right: 1px solid #DDDDDD;
         }
         
-        /* 5. Custom Button Styling */
+        /* 6. Custom Button Styling */
         div.stButton > button {
-            background-color: #FF7300;
-            color: white;
+            background-color: #FF7300 !important;
+            color: white !important;
             border: none;
             border-radius: 4px;
             font-weight: bold;
         }
         div.stButton > button:hover {
-            background-color: #E06000;
-            color: white;
+            background-color: #E06000 !important;
+            color: white !important;
         }
         
-        /* 6. Remove default Streamlit colored bar at very top */
-        header[data-testid="stHeader"] {
-            background-color: white;
+        /* 7. Link Styling (Optional - for source links) */
+        a {
+            color: #FF7300 !important;
+            text-decoration: none;
         }
     </style>
 """, unsafe_allow_html=True)
