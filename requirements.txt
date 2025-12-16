@@ -4,5 +4,5 @@ langchain-community
 langchain-huggingface
 langchain-groq
 langchain-pinecone
-pinecone-client
+pinecone
 sentence-transformers
