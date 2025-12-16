@@ -75,8 +75,7 @@ with st.sidebar:
     # LOGO: Using the RAW GitHub link so it renders correctly
     st.image("https://raw.githubusercontent.com/srikarananand/state-energy-rag/main/logo.png", use_container_width=True)
     
-    st.markdown("### Settings")
-    st.markdown("---")
+    
     
     # API Keys Handling
     if "PINECONE_API_KEY" in st.secrets:
