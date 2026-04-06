@@ -16,7 +16,7 @@ Most state energy policy documents are buried in PDFs nobody reads. This tool in
 - 🧠 **LLaMA 3.3 70B** (via Groq) for analyst-grade response quality
 - 🔁 Designed for **50 states + D.C.** with a repeatable ingestion pipeline
 
-> **Current Status:** Prototype — New York indexed. [https://state-energy-rag-dnb6mh5nnttea2tvvko4pu.streamlit.app/](url).
+> **Current Status:** Prototype — New York indexed. [https://state-energy-rag-dnb6mh5nnttea2tvvko4pu.streamlit.app/](https://state-energy-rag-dnb6mh5nnttea2tvvko4pu.streamlit.app/).
 
 ---
 
