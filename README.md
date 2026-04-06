@@ -41,8 +41,6 @@ LangChain LCEL Chain → Groq LLaMA 3.3 70B
 ↓
 Cited Answer + Source Documents
 
-text
-
 ---
 
 ## 📋 Data Scope
@@ -119,6 +117,6 @@ text
 
 ## 👤 Author
 
-**Srikar Anand** — [GitHub](https://github.com/srikarananand)
+**Srikaran Anand** — [GitHub](https://github.com/srikarananand)
 
 *Built to make energy policy research faster, smarter, and actually usable.*
